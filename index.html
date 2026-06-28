@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>孟孟的时光藏宝铺</title>
+  <style>
+    :root {
+      --pink1: #ffb2c6;
+      --pink2: #ffebf2;
+      --text-pink: #c84b78;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "微软雅黑", sans-serif;
+    }
+    body {
+      background: var(--pink2);
+      padding: 20px;
+      color: #333;
+    }
+    header {
+      background: var(--pink1);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: var(--text-pink);
+      font-size: 26px;
+    }
+    .box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 18px;
+      border: 2px solid var(--pink1);
+    }
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 10px 0;
+    }
+    .stat-item {
+      padding: 6px 12px;
+      background: var(--pink2);
+      border-radius: 8px;
+    }
+    .draw-select-wrap {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+    select, button {
+      padding: 8px 10px;
+      border: 1px solid var(--pink1);
+      border-radius: 6px;
+      background: white;
+      width: 100%;
+    }
+    button {
+      background: var(--pink1);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top:10px;
+    }
+    th,td {
+      border:1px solid #ddd;
+      padding:8px;
+      text-align:center;
+    }
+    th {
+      background: var(--pink1);
+      color:white;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>孟孟的时光藏宝铺</h1>
+</header>
+
+<!-- 统计面板 -->
+<div class="box">
+  <h3>📊 抽卡总统计</h3>
+  <div class="stat-row">
+    <div class="stat-item">总抽数：<span id="totalDraw">0</span></div>
+    <div class="stat-item">R卡总数：<span id="rTotal">0</span></div>
+    <div class="stat-item">SR卡总数：<span id="srTotal">0</span></div>
+    <div class="stat-item">SSR卡总数：<span id="ssrTotal">0</span></div>
+    <div class="stat-item">PR特典卡总数：<span id="prTotal">0</span></div>
+    <div class="stat-item">特殊周边：<span id="giftTotal">0</span></div>
+  </div>
+</div>
+
+<!-- 抽卡录入区（1~10抽自选） -->
+<div class="box">
+  <h3>记录抽卡结果</h3>
+  <div style="margin:10px 0;">
+    <label>本次抽取数量（1-10抽）：</label>
+    <select id="drawCount">
+      <option value="1">1抽</option>
+      <option value="2">2抽</option>
+      <option value="3">3抽</option>
+      <option value="4">4抽</option>
+      <option value="5">5抽</option>
+      <option value="6">6抽</option>
+      <option value="7">7抽</option>
+      <option value="8">8抽</option>
+      <option value="9">9抽</option>
+      <option value="10">10抽</option>
+    </select>
+  </div>
+  <div id="drawInputWrap" class="draw-select-wrap"></div>
+  <button style="margin-top:12px;" id="submitDraw">提交本次抽卡记录</button>
+</div>
+
+<!-- 历史流水 -->
+<div class="box">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h3>📜 历史抽卡流水</h3>
+    <button id="clearAll">清空全部记录</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>时间</th>
+        <th>类型</th>
+        <th>名称</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="historyList"></tbody>
+  </table>
+</div>
+
+<script>
+// 卡牌完整配置
+const cardData = {
+  R: [
+    "双面卡1", "双面卡2", "双面卡3", "双面卡4",
+    "猫猫卡1", "猫猫卡2", "猫猫卡3", "猫猫卡4",
+    "美孟卡1", "美孟卡2", "美孟卡3", "美孟卡4", "美孟卡5",
+    "拍立得1", "拍立得2", "拍立得3", "拍立得4"
+  ],
+  SR: [
+    "sr高级风工艺卡1", "sr高级风工艺卡2", "sr高级风工艺卡3", "sr高级风工艺卡4",
+    "花卡1", "花卡2", "花卡3", "花卡4",
+    "手绘猫猫卡1", "手绘猫猫卡2", "手绘猫猫卡3", "手绘猫猫卡4",
+    "综艺卡1", "综艺卡2", "综艺卡3", "综艺卡4", "综艺卡5"
+  ],
+  SSR: [
+    "ssr工艺卡1", "ssr工艺卡2", "ssr工艺卡3", "ssr工艺卡4",
+    "嘟嘴卡1", "嘟嘴卡2", "嘟嘴卡3", "嘟嘴卡4", "嘟嘴卡5", "嘟嘴卡6",
+    "古风卡-窦昭", "古风卡-花琉璃", "古风卡-青木媛", "古风卡-沈妙", "古风卡-暮晚摇", "古风卡-沈汐和"
+  ],
+  PR: [
+    "语录卡1", "语录卡2", "语录卡3", "语录卡4",
+    "自拍卡1", "自拍卡2", "自拍卡3", "自拍卡4",
+    "古早卡1", "古早卡2", "古早卡3", "古早卡4"
+  ],
+  Gift: [
+    "孟孟豆", "孟呦呦", "U型枕", "雅诗兰黛口红", "MM豆礼盒",
+    "巧克力胸针", "保温杯", "999足金贴", "签名照"
+  ]
+};
+
+// 本地存储key
+const STORAGE_KEY_TOTAL = "mengmeng_draw_total";
+const STORAGE_KEY_HISTORY = "mengmeng_draw_history";
+
+// 初始化本地数据
+let totalData = JSON.parse(localStorage.getItem(STORAGE_KEY_TOTAL)) || {
+  totalDraw:0, R:0, SR:0, SSR:0, PR:0, Gift:0
+};
+let historyList = JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY)) || [];
+
+// DOM节点
+const drawCountSel = document.getElementById("drawCount");
+const drawInputWrap = document.getElementById("drawInputWrap");
+const submitDrawBtn = document.getElementById("submitDraw");
+const historyListDom = document.getElementById("historyList");
+const clearAllBtn = document.getElementById("clearAll");
+
+// 生成单个卡牌下拉选择框
+function createCardSelect() {
+  const sel = document.createElement("select");
+  Object.keys(cardData).forEach(type => {
+    cardData[type].forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = JSON.stringify({type, name});
+      opt.textContent = `[${type}] ${name}`;
+      sel.appendChild(opt);
+    });
+  });
+  return sel;
+}
+
+// 根据选择的抽数渲染对应数量下拉框
+function renderDrawInputs() {
+  drawInputWrap.innerHTML = "";
+  const num = Number(drawCountSel.value);
+  for(let i = 0; i < num; i++) {
+    drawInputWrap.appendChild(createCardSelect());
+  }
+}
+
+// 更新顶部统计数字
+function refreshStat() {
+  document.getElementById("totalDraw").innerText = totalData.totalDraw;
+  document.getElementById("rTotal").innerText = totalData.R;
+  document.getElementById("srTotal").innerText = totalData.SR;
+  document.getElementById("ssrTotal").innerText = totalData.SSR;
+  document.getElementById("prTotal").innerText = totalData.PR;
+  document.getElementById("giftTotal").innerText = totalData.Gift;
+}
+
+// 渲染历史流水列表
+function renderHistory() {
+  historyListDom.innerHTML = "";
+  historyList.forEach((item, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.time}</td>
+      <td>${item.type}</td>
+      <td>${item.name}</td>
+      <td><button data-idx="${idx}" class="del-btn">删除</button></td>
+    `;
+    historyListDom.appendChild(tr);
+  });
+  // 单条删除事件
+  document.querySelectorAll(".del-btn").forEach(btn => {
+    btn.onclick = function() {
+      const idx = Number(this.dataset.idx);
+      const delItem = historyList[idx];
+      totalData[delItem.type] -= 1;
+      totalData.totalDraw -= 1;
+      historyList.splice(idx, 1);
+      saveStorage();
+      refreshStat();
+      renderHistory();
+    }
+  })
+}
+
+// 保存数据到本地存储
+function saveStorage() {
+  localStorage.setItem(STORAGE_KEY_TOTAL, JSON.stringify(totalData));
+  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(historyList));
+}
+
+// 提交抽卡记录
+submitDrawBtn.onclick = function() {
+  const selects = drawInputWrap.querySelectorAll("select");
+  const nowTime = new Date().toLocaleString();
+  selects.forEach(sel => {
+    const data = JSON.parse(sel.value);
+    totalData.totalDraw += 1;
+    totalData[data.type] += 1;
+    // 新记录插入最顶部
+    historyList.unshift({
+      time: nowTime,
+      type: data.type,
+      name: data.name
+    });
+  });
+  saveStorage();
+  refreshStat();
+  renderHistory();
+  alert("记录保存成功！关闭页面再打开数据不会丢失");
+}
+
+// 清空全部数据
+clearAllBtn.onclick = function() {
+  if(!confirm("确认清空所有统计和历史记录？删除后无法恢复！")) return;
+  totalData = {totalDraw:0,R:0,SR:0,SSR:0,PR:0,Gift:0};
+  historyList = [];
+  saveStorage();
+  refreshStat();
+  renderHistory();
+}
+
+// 切换抽数时刷新输入框
+drawCountSel.addEventListener("change", renderDrawInputs);
+
+// 页面初始化执行
+renderDrawInputs();
+refreshStat();
+renderHistory();
+</script>
+</body>
+</html>
